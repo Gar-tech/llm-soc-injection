@@ -185,3 +185,12 @@ an isolated VM so the injected strings come from genuine execution; widen
 payloads and report schemas (full CAPEv2 reports with signatures and network);
 and compare provenance tagging with detection-based and structured-output
 defenses, especially against non-instruction payloads like benign framing.
+
+## Citing this work
+
+This is a preliminary, ongoing experiment. If you refer to it, please link the
+repository and note the model and sample size the numbers come from
+(`llama3.1:8b`, n = 19 attacked reports):
+
+> Runtime Prompt Injection against LLM-Based Malware Triage (preliminary).
+> https://github.com/Gar-tech/llm-soc-injection, 2026.
