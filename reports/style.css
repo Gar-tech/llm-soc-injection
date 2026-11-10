@@ -1,0 +1,35 @@
+@page { size: A4; margin: 16mm 15mm 16mm 15mm; }
+* { box-sizing: border-box; }
+body { font-family: "Leelawadee UI", "Segoe UI", Tahoma, sans-serif; font-size: 10.5pt;
+       line-height: 1.6; color: #1f2328; margin: 0; }
+h1 { font-size: 19pt; line-height: 1.3; margin: 0 0 4px; }
+h2 { font-size: 13.5pt; margin: 20px 0 8px; padding-bottom: 4px; border-bottom: 2px solid #1f2328;
+     break-after: avoid; }
+h3 { font-size: 11.5pt; margin: 14px 0 6px; break-after: avoid; }
+p { margin: 6px 0; }
+.meta { color: #59636e; font-size: 9.5pt; margin-bottom: 12px; }
+code { font-family: Consolas, "Cascadia Mono", monospace; font-size: 9pt; background: #eff1f3;
+       padding: 1px 4px; border-radius: 3px; }
+pre { font-family: Consolas, "Cascadia Mono", monospace; font-size: 8.6pt; background: #1f2328;
+      color: #e6edf3; padding: 9px 11px; border-radius: 5px; white-space: pre-wrap;
+      line-height: 1.45; break-inside: avoid; margin: 6px 0 10px; }
+table { border-collapse: collapse; width: 100%; margin: 6px 0 12px; font-size: 9.6pt;
+        break-inside: avoid; }
+th, td { border: 1px solid #d1d9e0; padding: 4px 8px; text-align: left; vertical-align: top; }
+th { background: #f3f5f7; }
+td.n, th.n { text-align: right; white-space: nowrap; }
+.box { border-left: 4px solid #3b6fd8; background: #f4f7fd; padding: 8px 12px; margin: 10px 0;
+       border-radius: 0 4px 4px 0; break-inside: avoid; }
+.box.warn { border-color: #c2410c; background: #fdf5f0; }
+.box.ok { border-color: #2f7d4b; background: #f2f9f4; }
+.box p:first-child, .box ul:first-child { margin-top: 0; }
+ul, ol { margin: 4px 0 8px; padding-left: 22px; }
+li { margin: 2px 0; }
+.kpis { display: flex; gap: 8px; margin: 10px 0; }
+.kpi { flex: 1; border: 1px solid #d1d9e0; border-radius: 6px; padding: 8px 10px; }
+.kpi .v { font-size: 18pt; font-weight: 700; line-height: 1.2; }
+.kpi .l { font-size: 8.8pt; color: #59636e; line-height: 1.35; }
+img.fig { width: 100%; border: 1px solid #d1d9e0; border-radius: 4px; margin: 6px 0; }
+.cap { font-size: 9pt; color: #59636e; margin-top: 0; }
+.pb { break-before: page; }
+b.red { color: #b42318; }

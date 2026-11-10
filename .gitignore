@@ -1,0 +1,13 @@
+__pycache__/
+*.pyc
+.venv/
+.env
+# Do not commit downloaded malware reports; regenerate demo data with `make demo`.
+data/reports/
+data/labels.csv
+# Scratch outputs stay out of git; reviewed real runs are committed explicitly.
+results/*.csv
+results/*.json
+results/*/*.log
+figures/*.png
+!figures/asr_by_payload_llama3.1-8b.png

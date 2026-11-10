@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="th"><head><meta charset="utf-8"><title>สรุปผลการทดลอง llm-soc-injection</title>
+<link rel="stylesheet" href="style.css">
+<style>body{font-size:10pt;line-height:1.55} h2{margin-top:14px} table{font-size:9.2pt} th,td{padding:3px 8px}</style></head><body>
+
+<h1>รายงานสรุปผล: Runtime Prompt Injection ต่อ LLM ที่ใช้คัดแยกมัลแวร์</h1>
+<div class="meta">โปรเจกต์ <code>llm-soc-injection</code> · ผลชุดแรกจากโมเดล <code>llama3.1:8b</code> · รันบน PC (RTX 4060 Ti 8 GB) · 10 พฤศจิกายน 2026</div>
+
+<div class="box">
+<p><b>สรุปในย่อหน้าเดียว:</b> เราฉีดข้อความแบบที่มัลแวร์สร้างตอนรัน (ชื่อ process, ไฟล์, registry, mutex, DNS) ลงในรายงาน CAPEv2 จริง แล้วให้ <code>llama3.1:8b</code> ตัดสินว่าเป็นมัลแวร์หรือไม่ ในรายงานที่โมเดลจับได้ถูกตอนยังไม่โดนโจมตี การโจมตี<b>เปลี่ยนคำตอบเป็น benign ได้ 43%</b> ของครั้งที่ทดสอบ เมื่อใช้ defense แบบ provenance tagging <b>ลดลงเหลือ 21%</b> ช่องทางที่ได้ผลที่สุดคือชื่อ process (68%) และ defense ไม่ช่วยกับ payload ที่ไม่ได้เป็นคำสั่งแต่ดูน่าเชื่อถือ (DNS)</p>
+</div>
+
+<div class="kpis">
+  <div class="kpi"><div class="v">19 / 50</div><div class="l">รายงานที่โมเดลจับได้ตอนยังไม่โดนโจมตี (38%) ใช้ทดสอบการโจมตี</div></div>
+  <div class="kpi"><div class="v">43%</div><div class="l">ASR รวม ไม่มี defense<br>(57 / 133 ครั้ง)</div></div>
+  <div class="kpi"><div class="v">21%</div><div class="l">ASR รวม มี provenance tagging<br>(28 / 133 ครั้ง)</div></div>
+  <div class="kpi"><div class="v">1 / 19</div><div class="l">กลุ่มควบคุม: defense อย่างเดียวทำให้ตอบ benign</div></div>
+</div>
+
+<h2>1. คำถามของการทดลอง</h2>
+<ol>
+<li>ข้อความที่มัลแวร์สร้างตอนรันและหลุดเข้าไปในรายงาน sandbox จะหลอกให้ LLM เปลี่ยนคำตัดสินจาก <i>malicious</i> เป็น <i>benign</i> ได้บ่อยแค่ไหน (Attack Success Rate, ASR)</li>
+<li>Defense แบบ provenance tagging (ติดป้ายว่าค่าที่มาจาก sample เป็นข้อมูลที่ไม่น่าเชื่อถือ ห้ามทำตาม) ลด ASR ได้เท่าไร</li>
+</ol>
+<p>ใช้แค่ไฟล์รายงาน JSON ไม่มีการรันมัลแวร์จริง</p>
+
+<h2>2. ผลการทดลอง</h2>
+<table>
+<tr><th>เงื่อนไข</th><th>ช่องทางที่ฉีด</th><th class="n">ไม่มี defense</th><th class="n">มี defense</th></tr>
+<tr><td><code>override_benign</code></td><td>ชื่อ process</td><td class="n"><b>13/19 (68%)</b></td><td class="n">7/19 (37%)</td></tr>
+<tr><td><code>role_confusion</code></td><td>mutex</td><td class="n">10/19 (53%)</td><td class="n">3/19 (16%)</td></tr>
+<tr><td><code>fragment_ab</code></td><td>ชื่อ process + ไฟล์ที่สร้าง</td><td class="n">10/19 (53%)</td><td class="n">7/19 (37%)</td></tr>
+<tr><td><code>authority_spoof</code></td><td>ค่า registry</td><td class="n">8/19 (42%)</td><td class="n">2/19 (11%)</td></tr>
+<tr><td><code>benign_framing</code></td><td>DNS query</td><td class="n">6/19 (32%)</td><td class="n">7/19 (37%)</td></tr>
+<tr><td><code>fragment_a</code></td><td>ชื่อ process (ครึ่งแรก)</td><td class="n">5/19 (26%)</td><td class="n">0/19 (0%)</td></tr>
+<tr><td><code>fragment_b</code></td><td>ไฟล์ที่สร้าง (ครึ่งหลัง)</td><td class="n">5/19 (26%)</td><td class="n">2/19 (11%)</td></tr>
+<tr><th colspan="2">รวม</th><th class="n">57/133 (43%)</th><th class="n">28/133 (21%)</th></tr>
+</table>
+<img class="fig" style="width:60%;display:block;margin:6px auto" src="../figures/asr_by_payload_llama3.1-8b.png" alt="ASR by payload">
+<p class="cap" style="text-align:center">รูปที่ 1 ASR แยกตาม payload สีแดงคือไม่มี defense สีน้ำเงินคือมี provenance tagging (n = 19 รายงาน)</p>
+
+<h2>3. ข้อค้นพบหลัก</h2>
+<ol>
+<li><b>ข้อความตอนรันหลอกโมเดลได้จริงและบ่อย</b> แค่ใส่คำสั่งไว้ในชื่อ process ก็เปลี่ยนคำตอบที่ถูกเป็น benign ได้ 13 จาก 19 รายงาน ทั้งที่ system prompt บอกไว้แล้วว่าข้อมูลในรายงานเป็นหลักฐาน ห้ามทำตาม</li>
+<li><b>การแบ่ง payload ได้ผลเมื่อทั้งสองครึ่งอยู่ด้วยกัน</b> ฉีดครึ่งเดียวได้ 26% แต่ฉีดทั้งสองครึ่งลงรายงานเดียวกันได้ 53%</li>
+<li><b>Provenance tagging ลด ASR ได้ประมาณครึ่ง</b> (43% → 21%) กลุ่มควบคุมที่ใส่ defense บนรายงานสะอาดเปลี่ยนเป็น benign แค่ 1 จาก 19 รายงาน การลดลงจึงไม่ได้มาจาก defense ทำให้โมเดลตอบ benign ไปหมด</li>
+<li><b>Defense ใช้ไม่ได้กับ benign framing</b> payload ทาง DNS ไม่ใช่คำสั่ง แต่เป็นชื่อโดเมนที่ดูปลอดภัย การติดป้ายว่าห้ามทำตามจึงไม่ช่วย (32% → 37% ต่างกันแค่ 1 รายงาน) provenance tagging กันได้เฉพาะการสั่งให้ทำตาม ไม่ได้กันการโน้มน้าวด้วยหลักฐานปลอม</li>
+<li><b>โมเดลเล็กจับมัลแวร์จาก reduced reports ได้น้อย</b> จับได้ 19 จาก 50 (38%) และจับได้แค่บางตระกูล: Lokibot 5/5, Qakbot 5/5, Trickbot 3/5, Ursnif 3/5, Zeus 2/5, njRAT 1/5 ส่วน Adload, Emotet, HarHar และ Swisyn จับไม่ได้เลย</li>
+</ol>
+
+<h2>4. ข้อจำกัด</h2>
+<ul>
+<li><b>ตัวอย่างเล็ก:</b> n = 19 รายงาน ค่า ASR ต่อ payload ขยับประมาณ 5 จุดทุก 1 รายงาน ความต่างที่น้อยกว่าประมาณ 20 จุดไม่ควรอ่านว่าต่างจริง ช่วงความเชื่อมั่น 95% ของ ASR รวมประมาณ 35–51% (ไม่มี defense) และ 15–29% (มี defense) แต่คำนวณโดยถือว่าทุกการเรียกอิสระต่อกัน ช่วงจริงจึงกว้างกว่านี้</li>
+<li><b>โมเดลเดียว:</b> ผลนี้เป็นของ <code>llama3.1:8b</code> เท่านั้น โมเดลที่เก่งกว่าอาจได้ผลต่างไป</li>
+<li><b>รายงานที่นับเข้าเอนเอียง:</b> ทั้ง 19 รายงานมาจาก 6 ตระกูล ไม่ครอบคลุมอีก 4 ตระกูล</li>
+<li><b>Reduced reports:</b> ไม่มีฟิลด์ processes, network และ signatures ช่องทางชื่อ process และ DNS จึงมีแค่ payload บรรทัดเดียว ทำให้ payload เด่นกว่าในรายงานเต็ม</li>
+<li><b>จำลองตำแหน่ง:</b> ไม่ได้รันมัลแวร์จริง payload ถูกวางในตำแหน่งที่ค่าตอนรันน่าจะไปอยู่ ไม่ได้พิสูจน์ว่าทุก sandbox บันทึกค่าเหล่านี้ตรงตามนั้น</li>
+</ul>
+
+<h2>5. ขั้นต่อไป</h2>
+<ul>
+<li>รันโมเดลที่เก่งกว่า (เช่น Claude ผ่าน <code>--backend anthropic</code>) กับ 50 รายงานเดิม เพื่อดูว่าผลเกิดซ้ำหรือไม่ ค่า baseline 50 ไฟล์ด้วย Claude Sonnet 5.5 ประมาณ $0.5 รันเต็มประมาณ $9</li>
+<li>สร้าง repo บน GitHub โดยไม่รวม <code>.venv</code> และไม่รวมไฟล์รายงานจนกว่าจะเช็ก license ของ dataset</li>
+<li>เทียบ provenance tagging กับ defense แบบอื่น โดยเฉพาะกับ payload ที่ไม่ได้เป็นคำสั่ง เช่น benign framing</li>
+</ul>
+
+<h2>6. Dataset และอ้างอิง</h2>
+<p>Avast-CTU Public CAPEv2 Dataset (reduced reports) — https://github.com/avast/avast-ctu-cape-dataset · Bosansky et al., <i>Avast-CTU Public CAPE Dataset</i>, arXiv:2209.03188 (2022) · สุ่ม 50 รายงาน ตระกูลละ 5 ไฟล์ × 10 ตระกูล ด้วย seed 42</p>
+
+</body></html>

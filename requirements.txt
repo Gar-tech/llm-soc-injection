@@ -1,0 +1,6 @@
+# Core experiment needs only the standard library + matplotlib for the figure.
+matplotlib>=3.7
+
+# Pick ONE backend for real results (mock mode needs neither):
+#   anthropic>=0.39      # for --backend anthropic
+#   openai>=1.40         # for --backend openai (also works with a local Ollama)
